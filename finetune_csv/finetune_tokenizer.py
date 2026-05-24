@@ -30,6 +30,8 @@ def set_seed(seed: int, rank: int = 0):
         torch.cuda.manual_seed_all(actual_seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        torch.mps.manual_seed(actual_seed)
 
 
 def get_model_size(model: torch.nn.Module) -> str:
@@ -288,7 +290,12 @@ def main():
     
     config = CustomFinetuneConfig(args.config)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     print(f"Using device: {device}")
     
     config = CustomFinetuneConfig(args.config)

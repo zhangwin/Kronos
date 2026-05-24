@@ -302,15 +302,24 @@ def generate_predictions(config: dict, test_data: dict) -> dict[str, pd.DataFram
 def main():
     """Main function to set up config, run inference, and execute backtesting."""
     parser = argparse.ArgumentParser(description="Run Kronos Inference and Backtesting")
-    parser.add_argument("--device", type=str, default="cuda:1", help="Device for inference (e.g., 'cuda:0', 'cpu')")
+    parser.add_argument("--device", type=str, default="auto", help="Device for inference (auto/cuda:0/mps/cpu)")
     args = parser.parse_args()
 
     # --- 1. Configuration Setup ---
     base_config = Config()
 
+    _device = args.device
+    if _device == "auto":
+        if torch.cuda.is_available():
+            _device = "cuda:0"
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            _device = "mps"
+        else:
+            _device = "cpu"
+
     # Create a dedicated dictionary for this run's configuration
     run_config = {
-        'device': args.device,
+        'device': _device,
         'data_path': base_config.dataset_path,
         'result_save_path': base_config.backtest_result_path,
         'result_name': base_config.backtest_save_folder_name,
